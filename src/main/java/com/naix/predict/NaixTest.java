@@ -39,6 +39,7 @@ public class NaixTest
     public static int currentColor = 0xFF0000; // 0xFF0000=红 0xFFFF00=黄
 
     private KeyBinding keyToggle;
+    private int tickCounter = 0;
 
     @EventHandler
     public void init(FMLInitializationEvent event)
@@ -78,6 +79,7 @@ public class NaixTest
     public void onClientTick(TickEvent.ClientTickEvent event)
     {
         if (event.phase != TickEvent.Phase.END) return;
+        if (++tickCounter % 2 != 0) return;
         if (!enabled) {
             currentHitPos = null;
             currentColor = 0;
