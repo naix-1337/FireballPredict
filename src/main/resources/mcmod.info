@@ -1,0 +1,16 @@
+[
+{
+  "modid": "naix_test",
+  "name": "Naix Test",
+  "description": "A Minecraft Forge mod.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": [],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

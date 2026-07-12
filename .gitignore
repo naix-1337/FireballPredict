@@ -1,0 +1,48 @@
+# --- Eclipse ---
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# --- IDEA (keep key configs) ---
+out
+*.ipr
+*.iws
+.idea/shelf/
+.idea/artifacts/
+.idea/caches/
+.idea/compiler.xml
+.idea/copyright/
+.idea/dataSources/
+.idea/encodings.xml
+.idea/jsLibraryMappings.xml
+.idea/libraries/
+.idea/modules.xml
+.idea/scopes/
+.idea/tasks.xml
+.idea/vcs.xml
+.idea/workspace/
+
+
+# --- Gradle ---
+build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- Minecraft runtime ---
+run/
+logs/
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.log
+
+# --- Mod archives (optional) ---
+# build/libs/*.jar
+*.dll
+.claude/settings.local.json
