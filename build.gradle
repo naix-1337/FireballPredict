@@ -27,8 +27,8 @@ plugins {
 }
 */
 version = "1.0"
-group= "com.naix.naix_test"
-archivesBaseName = "naix_test"
+group= "com.naix.predict"
+archivesBaseName = "fireball_predict"
 
 minecraft {
     version = "1.8.9-11.15.1.2318-1.8.9"

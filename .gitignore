@@ -1,30 +1,10 @@
-# --- Eclipse ---
-bin
-*.launch
-.settings
-.metadata
-.classpath
-.project
-
-# --- IDEA (keep key configs) ---
-out
+# --- IDE ---
+.idea/
+*.iml
 *.ipr
 *.iws
-.idea/shelf/
-.idea/artifacts/
-.idea/caches/
-.idea/compiler.xml
-.idea/copyright/
-.idea/dataSources/
-.idea/encodings.xml
-.idea/jsLibraryMappings.xml
-.idea/libraries/
-.idea/modules.xml
-.idea/scopes/
-.idea/tasks.xml
-.idea/vcs.xml
-.idea/workspace/
-
+out/
+eclipse/
 
 # --- Gradle ---
 build/
@@ -35,14 +15,18 @@ build/
 run/
 logs/
 
-# --- OS junk ---
+# --- OS ---
 .DS_Store
 Thumbs.db
 *.tmp
 *.bak
 *.log
-
-# --- Mod archives (optional) ---
-# build/libs/*.jar
 *.dll
-.claude/settings.local.json
+
+# --- Local ---
+.claude/
+docs/
+PROJECT_INDEX.md
+*.changelog.txt
+火焰弹预测_1.21.11/
+net/

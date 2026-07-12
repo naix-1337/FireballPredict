@@ -1,7 +1,7 @@
 [
 {
-  "modid": "naix_test",
-  "name": "Naix Test",
+  "modid": "fireball_predict",
+  "name": "Fireball Predict",
   "description": "A Minecraft Forge mod.",
   "version": "${version}",
   "mcversion": "${mcversion}",
