@@ -12,7 +12,7 @@ if "%OS%"=="Windows_NT" setlocal
 set DEFAULT_JVM_OPTS=
 
 @rem Force JDK 8 for Minecraft Forge 1.8.9 compatibility
-set JAVA_HOME=D:\Java\jdk8
+set JAVA_HOME=C:\Program Files\Java\zulu8.92.0.21-ca-jdk8.0.482-win_x64\zulu8.92.0.21-ca-jdk8.0.482-win_x64
 
 set DIRNAME=%~dp0
 if "%DIRNAME%" == "" set DIRNAME=.

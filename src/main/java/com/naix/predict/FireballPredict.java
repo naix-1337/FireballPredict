@@ -151,6 +151,6 @@ public class FireballPredict
 
     private static int rgb(int red, int green, int blue)
     {
-        return (red << 16) | (green << 8) | blue;
+        return (red << 16) | (green << 8) | blue; //
     }
 }
