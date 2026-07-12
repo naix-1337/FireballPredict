@@ -2,9 +2,11 @@ package com.naix.predict;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.EntityFireball;
 import net.minecraft.entity.projectile.EntityWitherSkull;
+import net.minecraft.init.Items;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.MovingObjectPosition;
@@ -96,10 +98,11 @@ public class FireballPredict
         }
 
         BlockPos newHit = null;
-        int color = 0x00FF00;
-        double nearestImpactDistance = Double.MAX_VALUE;
+        int color = 0xFF0000;
 
-        // 只检测已经存在于世界中的火球实体，不检测玩家手持的烈焰弹。
+        // 模式 1：火球检测。仍取落点距离玩家最近的火球。
+        double minDist = Double.MAX_VALUE;
+        Vec3 playerPos = new Vec3(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ);
         List<Entity> entities = world.loadedEntityList;
         for (int i = 0; i < entities.size(); i++) {
             Entity e = entities.get(i);
@@ -122,11 +125,33 @@ public class FireballPredict
                 double dz = hitVec.zCoord - fb.posZ;
                 double impactDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-                // 多个火球同时存在时，优先显示马上就要撞击的火球。
-                if (impactDistance < nearestImpactDistance) {
-                    nearestImpactDistance = impactDistance;
-                    newHit = mop.getBlockPos();
+                BlockPos hitPos = mop.getBlockPos();
+                Vec3 hitCenter = new Vec3(
+                    hitPos.getX() + 0.5, hitPos.getY() + 0.5, hitPos.getZ() + 0.5);
+                double playerDistance = playerPos.squareDistanceTo(hitCenter);
+                if (playerDistance < minDist) {
+                    minDist = playerDistance;
+                    newHit = hitPos;
                     color = getDistanceColor(impactDistance);
+                }
+            }
+        }
+
+        // 模式 2：玩家手持烈焰弹。保留原有预测，颜色固定为黄色。
+        if (newHit == null) {
+            for (EntityPlayer p : world.playerEntities) {
+                if (p.getHeldItem() == null || p.getHeldItem().getItem() != Items.fire_charge)
+                    continue;
+
+                Vec3 eye = p.getPositionEyes(1.0f);
+                Vec3 look = p.getLook(1.0f);
+                Vec3 end = eye.addVector(look.xCoord * 100, look.yCoord * 100, look.zCoord * 100);
+
+                MovingObjectPosition mop = world.rayTraceBlocks(eye, end);
+                if (mop != null && mop.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+                    newHit = mop.getBlockPos();
+                    color = 0xFFFF00;
+                    break;
                 }
             }
         }
