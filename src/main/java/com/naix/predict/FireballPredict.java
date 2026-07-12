@@ -2,11 +2,9 @@ package com.naix.predict;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.EntityFireball;
 import net.minecraft.entity.projectile.EntityWitherSkull;
-import net.minecraft.init.Items;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.MovingObjectPosition;
@@ -36,7 +34,12 @@ public class FireballPredict
     // 开关状态 (PredictionRenderer 读取)
     public static boolean enabled = true;
     public static BlockPos currentHitPos = null;
-    public static int currentColor = 0xFF0000; // 0xFF0000=红 0xFFFF00=黄
+    public static int currentColor = 0x00FF00;
+
+    // 火球距离预测撞击点越近，警告颜色越偏红；越远则越偏绿。
+    private static final double NEAR_DISTANCE = 8.0D;
+    private static final double MEDIUM_DISTANCE = 24.0D;
+    private static final double FAR_DISTANCE = 48.0D;
 
     private KeyBinding keyToggle;
 
@@ -93,11 +96,10 @@ public class FireballPredict
         }
 
         BlockPos newHit = null;
-        int color = 0xFF0000; // 默认红色
+        int color = 0x00FF00;
+        double nearestImpactDistance = Double.MAX_VALUE;
 
-        // 模式 1：火球检测 — 取落点距离玩家最近的火球
-        double minDist = Double.MAX_VALUE;
-        Vec3 playerPos = new Vec3(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ);
+        // 只检测已经存在于世界中的火球实体，不检测玩家手持的烈焰弹。
         List<Entity> entities = world.loadedEntityList;
         for (int i = 0; i < entities.size(); i++) {
             Entity e = entities.get(i);
@@ -114,38 +116,41 @@ public class FireballPredict
 
             MovingObjectPosition mop = world.rayTraceBlocks(start, end);
             if (mop != null && mop.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
-                BlockPos hitPos = mop.getBlockPos();
-                Vec3 hitCenter = new Vec3(
-                    hitPos.getX() + 0.5, hitPos.getY() + 0.5, hitPos.getZ() + 0.5);
-                double dist = playerPos.squareDistanceTo(hitCenter);
-                if (dist < minDist) {
-                    minDist = dist;
-                    newHit = hitPos;
-                    color = 0xFF0000;
-                }
-            }
-        }
+                Vec3 hitVec = mop.hitVec;
+                double dx = hitVec.xCoord - fb.posX;
+                double dy = hitVec.yCoord - fb.posY;
+                double dz = hitVec.zCoord - fb.posZ;
+                double impactDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-        // 模式 2：玩家手持烈焰弹
-        if (newHit == null) {
-            for (EntityPlayer p : world.playerEntities) {
-                if (p.getHeldItem() == null || p.getHeldItem().getItem() != Items.fire_charge)
-                    continue;
-
-                Vec3 eye = p.getPositionEyes(1.0f);
-                Vec3 look = p.getLook(1.0f);
-                Vec3 end = eye.addVector(look.xCoord * 100, look.yCoord * 100, look.zCoord * 100);
-
-                MovingObjectPosition mop = world.rayTraceBlocks(eye, end);
-                if (mop != null && mop.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+                // 多个火球同时存在时，优先显示马上就要撞击的火球。
+                if (impactDistance < nearestImpactDistance) {
+                    nearestImpactDistance = impactDistance;
                     newHit = mop.getBlockPos();
-                    color = 0xFFFF00;
-                    break;
+                    color = getDistanceColor(impactDistance);
                 }
             }
         }
 
         currentHitPos = newHit;
-        if (newHit != null) currentColor = color;
+        currentColor = newHit == null ? 0 : color;
+    }
+
+    private static int getDistanceColor(double distance)
+    {
+        if (distance <= NEAR_DISTANCE) return 0xFF0000;
+        if (distance >= FAR_DISTANCE) return 0x00FF00;
+
+        if (distance <= MEDIUM_DISTANCE) {
+            float progress = (float) ((distance - NEAR_DISTANCE) / (MEDIUM_DISTANCE - NEAR_DISTANCE));
+            return rgb(255, Math.round(255 * progress), 0);
+        }
+
+        float progress = (float) ((distance - MEDIUM_DISTANCE) / (FAR_DISTANCE - MEDIUM_DISTANCE));
+        return rgb(Math.round(255 * (1.0F - progress)), 255, 0);
+    }
+
+    private static int rgb(int red, int green, int blue)
+    {
+        return (red << 16) | (green << 8) | blue;
     }
 }
