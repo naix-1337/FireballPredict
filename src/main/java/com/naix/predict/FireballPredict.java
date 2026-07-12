@@ -95,7 +95,9 @@ public class FireballPredict
         BlockPos newHit = null;
         int color = 0xFF0000; // 默认红色
 
-        // 模式 1：火球检测
+        // 模式 1：火球检测 — 取落点距离玩家最近的火球
+        double minDist = Double.MAX_VALUE;
+        Vec3 playerPos = new Vec3(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ);
         List<Entity> entities = world.loadedEntityList;
         for (int i = 0; i < entities.size(); i++) {
             Entity e = entities.get(i);
@@ -112,9 +114,15 @@ public class FireballPredict
 
             MovingObjectPosition mop = world.rayTraceBlocks(start, end);
             if (mop != null && mop.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
-                newHit = mop.getBlockPos();
-                color = 0xFF0000;
-                break;
+                BlockPos hitPos = mop.getBlockPos();
+                Vec3 hitCenter = new Vec3(
+                    hitPos.getX() + 0.5, hitPos.getY() + 0.5, hitPos.getZ() + 0.5);
+                double dist = playerPos.squareDistanceTo(hitCenter);
+                if (dist < minDist) {
+                    minDist = dist;
+                    newHit = hitPos;
+                    color = 0xFF0000;
+                }
             }
         }
 
