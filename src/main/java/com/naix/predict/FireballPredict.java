@@ -27,8 +27,8 @@ import org.lwjgl.input.Keyboard;
 
 import java.util.List;
 
-@Mod(modid = NaixTest.MODID, version = NaixTest.VERSION)
-public class NaixTest
+@Mod(modid = FireballPredict.MODID, version = FireballPredict.VERSION)
+public class FireballPredict
 {
     public static final String MODID = "fireball_predict";
     public static final String VERSION = "1.0";

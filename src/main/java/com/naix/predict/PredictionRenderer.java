@@ -17,14 +17,14 @@ public class PredictionRenderer
     @SubscribeEvent
     public void onRenderWorldLast(RenderWorldLastEvent event)
     {
-        if (!NaixTest.enabled || NaixTest.currentHitPos == null) return;
+        if (!FireballPredict.enabled || FireballPredict.currentHitPos == null) return;
 
         Minecraft mc = Minecraft.getMinecraft();
         World world = mc.theWorld;
         if (world == null) return;
 
-        BlockPos hit = NaixTest.currentHitPos;
-        int color = NaixTest.currentColor;
+        BlockPos hit = FireballPredict.currentHitPos;
+        int color = FireballPredict.currentColor;
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
