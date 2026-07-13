@@ -36,6 +36,7 @@ public class FireballPredict
     // 开关状态 (PredictionRenderer 读取)
     public static boolean enabled = true;
     public static BlockPos currentHitPos = null;
+    public static EntityFireball currentFireball = null;
     public static int currentColor = 0x00FF00;
 
     // 火球距离预测撞击点越近，警告颜色越偏红；越远则越偏绿。
@@ -89,6 +90,7 @@ public class FireballPredict
         if (++tickCounter % 2 != 0) return;
         if (!enabled) {
             currentHitPos = null;
+            currentFireball = null;
             currentColor = 0;
             return;
         }
@@ -97,6 +99,7 @@ public class FireballPredict
         World world = mc.theWorld;
         if (world == null || mc.thePlayer == null) {
             currentHitPos = null;
+            currentFireball = null;
             currentColor = 0;
             return;
         }
@@ -106,6 +109,7 @@ public class FireballPredict
 
         // 模式 1：火球检测。仍取落点距离玩家最近的火球。
         double minDist = Double.MAX_VALUE;
+        EntityFireball bestFireball = null;
         Vec3 playerPos = new Vec3(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ);
         List<Entity> entities = world.loadedEntityList;
         for (int i = 0; i < entities.size(); i++) {
@@ -137,9 +141,12 @@ public class FireballPredict
                     minDist = playerDistance;
                     newHit = hitPos;
                     color = getDistanceColor(impactDistance);
+                    bestFireball = fb;
                 }
             }
         }
+
+        currentFireball = bestFireball;
 
         // 模式 2：玩家手持烈焰弹。保留原有预测，颜色固定为黄色。
         if (newHit == null) {

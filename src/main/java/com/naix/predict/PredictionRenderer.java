@@ -5,10 +5,13 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.entity.projectile.EntityFireball;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+
+import org.lwjgl.opengl.GL11;
 
 public class PredictionRenderer
 {
@@ -141,6 +144,28 @@ public class PredictionRenderer
             }
 
             tess.draw();
+
+            // 绘制白色直线：火球位置 → 预测落点
+            EntityFireball fb = FireballPredict.currentFireball;
+            if (fb != null) {
+                double fbX = fb.lastTickPosX
+                    + (fb.posX - fb.lastTickPosX) * event.partialTicks;
+                double fbY = fb.lastTickPosY
+                    + (fb.posY - fb.lastTickPosY) * event.partialTicks;
+                double fbZ = fb.lastTickPosZ
+                    + (fb.posZ - fb.lastTickPosZ) * event.partialTicks;
+
+                double hitX = hit.getX() + 0.5;
+                double hitY = hit.getY() + 0.5;
+                double hitZ = hit.getZ() + 0.5;
+
+                GL11.glLineWidth(2.5f);
+                WorldRenderer wrLine = tess.getWorldRenderer();
+                wrLine.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+                wrLine.pos(fbX, fbY, fbZ).color(1.0f, 1.0f, 1.0f, 0.75f).endVertex();
+                wrLine.pos(hitX, hitY, hitZ).color(1.0f, 1.0f, 1.0f, 0.75f).endVertex();
+                tess.draw();
+            }
         }
         finally
         {
