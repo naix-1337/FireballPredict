@@ -1,0 +1,5 @@
+# 复制此文件为 gradle.properties 并修改为你的 JDK 8 路径
+# Copy this to gradle.properties and set your JDK 8 path
+# Minecraft Forge 1.8.9 需要 JDK 8
+
+org.gradle.java.home=D:/Java/jdk8
