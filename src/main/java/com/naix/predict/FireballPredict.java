@@ -31,7 +31,7 @@ import java.util.List;
 public class FireballPredict
 {
     public static final String MODID = "fireball_predict";
-    public static final String VERSION = "2.0";
+    public static final String VERSION = "2.1";
 
     // 开关状态 (PredictionRenderer 读取)
     public static boolean enabled = true;
@@ -45,6 +45,8 @@ public class FireballPredict
 
     private KeyBinding keyToggle;
     private int tickCounter = 0;
+    private int warningCounter = 0;
+    private static final double WARN_RANGE = 2.5D;  // 5×5×5 范围
 
     @EventHandler
     public void init(FMLInitializationEvent event)
@@ -160,6 +162,20 @@ public class FireballPredict
 
         currentHitPos = newHit;
         currentColor = newHit == null ? 0 : color;
+
+        // 玩家在落点 5×5×5 范围内时，聊天栏红字警告（每秒 2 次）
+        // 仅在火球模式（模式 1）下触发，手持烈焰弹不提示
+        if (newHit != null && color != 0xFFFF00) {
+            double dx = Math.abs(mc.thePlayer.posX - (newHit.getX() + 0.5));
+            double dy = Math.abs(mc.thePlayer.posY - (newHit.getY() + 0.5));
+            double dz = Math.abs(mc.thePlayer.posZ - (newHit.getZ() + 0.5));
+            if (dx <= WARN_RANGE && dy <= WARN_RANGE && dz <= WARN_RANGE) {
+                if (++warningCounter % 5 == 0) {
+                    mc.thePlayer.addChatMessage(
+                        new ChatComponentText("§c当前位于烈焰弹爆炸范围内"));
+                }
+            }
+        }
     }
 
     private static int getDistanceColor(double distance)
