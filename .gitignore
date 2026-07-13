@@ -13,6 +13,7 @@ build/
 
 # --- Minecraft runtime ---
 run/
+gradle.properties
 logs/
 
 # --- OS ---
@@ -31,3 +32,5 @@ PROJECT_INDEX.md
 火焰弹预测_1.21.11/
 net/
 run_client.bat
+run_client.sh
+quick_start.bat
