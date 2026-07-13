@@ -5,13 +5,17 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.projectile.EntityFireball;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.glu.GLU;
+
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 public class PredictionRenderer
 {
@@ -48,6 +52,9 @@ public class PredictionRenderer
         GlStateManager.disableCull();
         GlStateManager.depthMask(false);
         GlStateManager.disableDepth();
+
+        float etaScreenX = -1, etaScreenY = -1;
+        boolean etaOnScreen = false;
 
         try
         {
@@ -145,16 +152,9 @@ public class PredictionRenderer
 
             tess.draw();
 
-            // 绘制白色直线：火球位置 → 预测落点
-            EntityFireball fb = FireballPredict.currentFireball;
-            if (fb != null) {
-                double fbX = fb.lastTickPosX
-                    + (fb.posX - fb.lastTickPosX) * event.partialTicks;
-                double fbY = fb.lastTickPosY
-                    + (fb.posY - fb.lastTickPosY) * event.partialTicks;
-                double fbZ = fb.lastTickPosZ
-                    + (fb.posZ - fb.lastTickPosZ) * event.partialTicks;
-
+            // 绘制白色直线：火球发射位置 → 预测落点
+            net.minecraft.util.Vec3 origin = FireballPredict.currentFireballOrigin;
+            if (origin != null) {
                 double hitX = hit.getX() + 0.5;
                 double hitY = hit.getY() + 0.5;
                 double hitZ = hit.getZ() + 0.5;
@@ -162,9 +162,34 @@ public class PredictionRenderer
                 GL11.glLineWidth(2.5f);
                 WorldRenderer wrLine = tess.getWorldRenderer();
                 wrLine.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
-                wrLine.pos(fbX, fbY, fbZ).color(1.0f, 1.0f, 1.0f, 0.75f).endVertex();
+                wrLine.pos(origin.xCoord, origin.yCoord, origin.zCoord).color(1.0f, 1.0f, 1.0f, 0.75f).endVertex();
                 wrLine.pos(hitX, hitY, hitZ).color(1.0f, 1.0f, 1.0f, 0.75f).endVertex();
                 tess.draw();
+            }
+
+            // 计算 ETA 文字在屏幕上的位置
+            if (FireballPredict.currentFireball != null && FireballPredict.currentETA >= 0) {
+                FloatBuffer modelview = BufferUtils.createFloatBuffer(16);
+                FloatBuffer projection = BufferUtils.createFloatBuffer(16);
+                IntBuffer viewport = BufferUtils.createIntBuffer(16);
+                FloatBuffer screenCoords = BufferUtils.createFloatBuffer(3);
+
+                GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, modelview);
+                GL11.glGetFloat(GL11.GL_PROJECTION_MATRIX, projection);
+                GL11.glGetInteger(GL11.GL_VIEWPORT, viewport);
+
+                double textX = hit.getX() + 0.5;
+                double textY = hit.getY() + 3.5;
+                double textZ = hit.getZ() + 0.5;
+
+                if (GLU.gluProject((float) textX, (float) textY, (float) textZ,
+                        modelview, projection, viewport, screenCoords)) {
+                    if (screenCoords.get(2) >= 0 && screenCoords.get(2) <= 1) {
+                        etaScreenX = screenCoords.get(0);
+                        etaScreenY = viewport.get(3) - screenCoords.get(1); // 翻转 Y 轴
+                        etaOnScreen = true;
+                    }
+                }
             }
         }
         finally
@@ -176,6 +201,43 @@ public class PredictionRenderer
             GlStateManager.disableBlend();
             GlStateManager.enableTexture2D();
             GlStateManager.popMatrix();
+        }
+
+        // 渲染 ETA 文字
+        if (etaOnScreen && FireballPredict.currentETA >= 0) {
+            GL11.glMatrixMode(GL11.GL_PROJECTION);
+            GL11.glPushMatrix();
+            GL11.glLoadIdentity();
+            GL11.glOrtho(0, mc.displayWidth, mc.displayHeight, 0, -1, 1);
+            GL11.glMatrixMode(GL11.GL_MODELVIEW);
+            GL11.glPushMatrix();
+            GL11.glLoadIdentity();
+
+            GlStateManager.disableLighting();
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(770, 771);
+
+            String text = String.format("%.1fs", FireballPredict.currentETA);
+            int halfW = mc.fontRendererObj.getStringWidth(text) / 2;
+            int textY = (int) (etaScreenY - 5);
+            float scale = 2.5f;
+
+            GlStateManager.pushMatrix();
+            GlStateManager.translate(etaScreenX, textY, 0);
+            GlStateManager.scale(scale, scale, 1.0f);
+            // 黑色描边：上下左右各偏移 1px
+            mc.fontRendererObj.drawString(text, -halfW - 1, -1, 0x000000);
+            mc.fontRendererObj.drawString(text, -halfW + 1, -1, 0x000000);
+            mc.fontRendererObj.drawString(text, -halfW - 1,  1, 0x000000);
+            mc.fontRendererObj.drawString(text, -halfW + 1,  1, 0x000000);
+            // 红色正文居中
+            mc.fontRendererObj.drawString(text, -halfW, 0, 0xFF5555);
+            GlStateManager.popMatrix();
+
+            GL11.glMatrixMode(GL11.GL_PROJECTION);
+            GL11.glPopMatrix();
+            GL11.glMatrixMode(GL11.GL_MODELVIEW);
+            GL11.glPopMatrix();
         }
     }
 }

@@ -37,7 +37,9 @@ public class FireballPredict
     public static boolean enabled = true;
     public static BlockPos currentHitPos = null;
     public static EntityFireball currentFireball = null;
+    public static Vec3 currentFireballOrigin = null;  // 火球发射位置
     public static int currentColor = 0x00FF00;
+    public static double currentETA = -1;
 
     // 火球距离预测撞击点越近，警告颜色越偏红；越远则越偏绿。
     private static final double NEAR_DISTANCE = 8.0D;
@@ -91,7 +93,9 @@ public class FireballPredict
         if (!enabled) {
             currentHitPos = null;
             currentFireball = null;
+            currentFireballOrigin = null;
             currentColor = 0;
+            currentETA = -1;
             return;
         }
 
@@ -100,7 +104,9 @@ public class FireballPredict
         if (world == null || mc.thePlayer == null) {
             currentHitPos = null;
             currentFireball = null;
+            currentFireballOrigin = null;
             currentColor = 0;
+            currentETA = -1;
             return;
         }
 
@@ -123,7 +129,7 @@ public class FireballPredict
 
             Vec3 start = new Vec3(fb.posX, fb.posY, fb.posZ);
             Vec3 dir = new Vec3(fb.motionX, fb.motionY, fb.motionZ).normalize();
-            Vec3 end = start.addVector(dir.xCoord * 100, dir.yCoord * 100, dir.zCoord * 100);
+            Vec3 end = start.addVector(dir.xCoord * 500, dir.yCoord * 500, dir.zCoord * 500);
 
             MovingObjectPosition mop = world.rayTraceBlocks(start, end);
             if (mop != null && mop.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
@@ -146,7 +152,28 @@ public class FireballPredict
             }
         }
 
+        // 首次发现该火球时记录其发射位置
+        if (bestFireball != null && bestFireball != currentFireball) {
+            currentFireballOrigin = new Vec3(bestFireball.posX, bestFireball.posY, bestFireball.posZ);
+        } else if (bestFireball == null) {
+            currentFireballOrigin = null;
+        }
+
         currentFireball = bestFireball;
+
+        // 计算火球到达落点的预计时间（秒）
+        if (bestFireball != null && newHit != null) {
+            Vec3 fbPos = new Vec3(bestFireball.posX, bestFireball.posY, bestFireball.posZ);
+            Vec3 hitCenter = new Vec3(newHit.getX() + 0.5, newHit.getY() + 0.5, newHit.getZ() + 0.5);
+            double fbSpeed = Math.sqrt(
+                bestFireball.motionX * bestFireball.motionX +
+                bestFireball.motionY * bestFireball.motionY +
+                bestFireball.motionZ * bestFireball.motionZ
+            );
+            currentETA = fbPos.distanceTo(hitCenter) / (fbSpeed * 20.0);
+        } else {
+            currentETA = -1;
+        }
 
         // 模式 2：玩家手持烈焰弹。保留原有预测，颜色固定为黄色。
         if (newHit == null) {
@@ -156,7 +183,7 @@ public class FireballPredict
 
                 Vec3 eye = p.getPositionEyes(1.0f);
                 Vec3 look = p.getLook(1.0f);
-                Vec3 end = eye.addVector(look.xCoord * 100, look.yCoord * 100, look.zCoord * 100);
+                Vec3 end = eye.addVector(look.xCoord * 500, look.yCoord * 500, look.zCoord * 500);
 
                 MovingObjectPosition mop = world.rayTraceBlocks(eye, end);
                 if (mop != null && mop.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
