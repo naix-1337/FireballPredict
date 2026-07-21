@@ -2,8 +2,8 @@ package com.naix.predict;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityFireball;
 import net.minecraft.entity.projectile.EntityWitherSkull;
 import net.minecraft.init.Items;
@@ -54,11 +54,11 @@ public class FireballPredict
     @EventHandler
     public void init(FMLInitializationEvent event)
     {
-        // R 键：开关火焰弹预测
+        // 注册按键绑定：参数分别为语言文件中的键名、默认按键、分类键名
         keyToggle = new KeyBinding(
-            "key.naix_test.fireball",     // 描述
-            Keyboard.KEY_R,                // R 键
-            "key.categories.naix_test"     // 类别
+            "key.fireball_predict.toggle",
+            Keyboard.KEY_R,
+            "key.categories.fireball_predict"
         );
         ClientRegistry.registerKeyBinding(keyToggle);
 
@@ -228,6 +228,6 @@ public class FireballPredict
 
     private static int rgb(int red, int green, int blue)
     {
-        return (red << 16) | (green << 8) | blue; //
+        return (red << 16) | (green << 8) | blue;
     }
 }
