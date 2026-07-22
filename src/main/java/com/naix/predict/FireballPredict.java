@@ -10,10 +10,11 @@ import net.minecraft.init.Items;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.StatCollector;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -27,63 +28,86 @@ import org.lwjgl.input.Keyboard;
 
 import java.util.List;
 
+/**
+ * 主 mod 类，用于初始化客户端事件、按键绑定和火球落点预测逻辑。
+ * Main mod class that initializes client events, key bindings, and fireball impact prediction logic.
+ */
 @Mod(modid = FireballPredict.MODID, version = FireballPredict.VERSION)
 public class FireballPredict
 {
     public static final String MODID = "fireball_predict";
     public static final String VERSION = "2.2";
 
+    // 开关状态，客户端渲染器与预测逻辑读取这些公有状态。
+    // The renderer and prediction logic read these public fields.
     public static boolean enabled = true;
     public static BlockPos currentHitPos = null;
     public static EntityFireball currentFireball = null;
-    public static Vec3 currentFireballOrigin = null;
+    public static Vec3 currentFireballOrigin = null;  // 火球发射位置 / fireball origin position
     public static int currentColor = 0x00FF00;
     public static double currentETA = -1;
 
+    // 颜色梯度依据火球到撞击点的距离：近红远绿。
+    // The color gradient depends on the remaining distance to the impact point.
     private static final double NEAR_DISTANCE = 8.0D;
     private static final double MEDIUM_DISTANCE = 24.0D;
     private static final double FAR_DISTANCE = 48.0D;
 
-    public static KeyBinding keyToggle;
+    private KeyBinding keyToggle;
     private int tickCounter = 0;
     private int warningCounter = 0;
-    private static final double WARN_RANGE = 2.5D;
+    private static final double WARN_RANGE = 2.5D;  // 5×5×5 范围 / 5×5×5 range
 
+    private static final String TRANSLATE_PREFIX = "key.fireball_predict.";
+
+    private static String localize(String key)
+    {
+        return StatCollector.translateToLocal(TRANSLATE_PREFIX + key);
+    }
+
+    /**
+     * 初始化客户端 key 绑定和事件处理。
+     * Initialize the client key binding and event handlers.
+     */
     @EventHandler
     public void init(FMLInitializationEvent event)
     {
-        // 1. 创建按键绑定对象
+        // 注册按键绑定：参数分别为语言文件中的键名、默认按键、分类键名
         keyToggle = new KeyBinding(
             "key.fireball_predict.toggle",
             Keyboard.KEY_R,
             "key.categories.fireball_predict"
         );
-        
-        // 2. 注册到 ClientRegistry，使其在按键控制菜单中出现
         ClientRegistry.registerKeyBinding(keyToggle);
 
-        // 3. 【关键修复】 Forge 1.8.9 中必须将包含 @SubscribeEvent 的类全部注册到 MinecraftForge.EVENT_BUS
-        MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(new PredictionRenderer());
+        // 注册事件
+        FMLCommonHandler.instance().bus().register(this);
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new PredictionRenderer());
     }
 
-    // === 按键响应监听 ===
+    /**
+     * 处理客户端按键事件，按下 R 键时切换预测显示。
+     * Handle client key input events and toggle prediction display when R is pressed.
+     */
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onKeyInput(InputEvent.KeyInputEvent event)
     {
-        // 自动响应玩家在设置菜单中自定义修改后的按键
-        if (keyToggle != null && keyToggle.isPressed()) {
+        if (keyToggle.isPressed()) {
+
             enabled = !enabled;
             if (Minecraft.getMinecraft().thePlayer != null) {
                 Minecraft.getMinecraft().thePlayer.addChatMessage(
-                    new ChatComponentText(enabled ? "§a[火焰弹预测] 已开启" : "§c[火焰弹预测] 已关闭")
+                    new ChatComponentText(enabled ? localize("enabled") : localize("disabled"))
                 );
             }
         }
     }
 
-    // === 每帧预测计算 ===
+    /**
+     * 每帧检查客户端世界，寻找最近的火球或手持烈焰弹并计算预测落点。
+     * Each client tick checks the world for the nearest fireball or a held fire charge and computes the predicted impact point.
+     */
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event)
@@ -113,6 +137,7 @@ public class FireballPredict
         BlockPos newHit = null;
         int color = 0xFF0000;
 
+        // 模式 1：火球检测。仍取落点距离玩家最近的火球。
         double minDist = Double.MAX_VALUE;
         EntityFireball bestFireball = null;
         Vec3 playerPos = new Vec3(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ);
@@ -151,6 +176,7 @@ public class FireballPredict
             }
         }
 
+        // 首次发现该火球时记录其发射位置
         if (bestFireball != null && bestFireball != currentFireball) {
             currentFireballOrigin = new Vec3(bestFireball.posX, bestFireball.posY, bestFireball.posZ);
         } else if (bestFireball == null) {
@@ -159,6 +185,7 @@ public class FireballPredict
 
         currentFireball = bestFireball;
 
+        // 计算火球到达落点的预计时间（秒）
         if (bestFireball != null && newHit != null) {
             Vec3 fbPos = new Vec3(bestFireball.posX, bestFireball.posY, bestFireball.posZ);
             Vec3 hitCenter = new Vec3(newHit.getX() + 0.5, newHit.getY() + 0.5, newHit.getZ() + 0.5);
@@ -172,6 +199,7 @@ public class FireballPredict
             currentETA = -1;
         }
 
+        // 模式 2：玩家手持烈焰弹。保留原有预测，颜色固定为黄色。
         if (newHit == null) {
             for (EntityPlayer p : world.playerEntities) {
                 if (p.getHeldItem() == null || p.getHeldItem().getItem() != Items.fire_charge)
@@ -193,6 +221,8 @@ public class FireballPredict
         currentHitPos = newHit;
         currentColor = newHit == null ? 0 : color;
 
+        // 玩家在落点 5×5×5 范围内时，聊天栏红字警告（每秒 2 次）
+        // 仅在火球模式（模式 1）下触发，手持烈焰弹不提示
         if (newHit != null && color != 0xFFFF00) {
             double dx = Math.abs(mc.thePlayer.posX - (newHit.getX() + 0.5));
             double dy = Math.abs(mc.thePlayer.posY - (newHit.getY() + 0.5));
@@ -200,12 +230,16 @@ public class FireballPredict
             if (dx <= WARN_RANGE && dy <= WARN_RANGE && dz <= WARN_RANGE) {
                 if (++warningCounter % 5 == 0) {
                     mc.thePlayer.addChatMessage(
-                        new ChatComponentText("§c当前位于烈焰弹爆炸范围内"));
+                        new ChatComponentText("§c" + localize("warning_nearby")));
                 }
             }
         }
     }
 
+    /**
+     * 根据火球与预测撞击点之间的距离生成颜色。
+     * Returns a warning color that transitions from red to yellow to green by distance.
+     */
     private static int getDistanceColor(double distance)
     {
         if (distance <= NEAR_DISTANCE) return 0xFF0000;
@@ -220,6 +254,10 @@ public class FireballPredict
         return rgb(Math.round(255 * (1.0F - progress)), 255, 0);
     }
 
+    /**
+     * 将红绿蓝三色分量组合成一个整数颜色值。
+     * Combines red, green and blue components into a single integer ARGB color.
+     */
     private static int rgb(int red, int green, int blue)
     {
         return (red << 16) | (green << 8) | blue;

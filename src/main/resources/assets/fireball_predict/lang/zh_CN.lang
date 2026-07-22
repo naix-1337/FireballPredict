@@ -1,0 +1,6 @@
+key.categories.fireball_predict=烈焰弹预测
+key.fireball_predict.toggle=切换烈焰弹预测
+key.fireball_predict.enabled=§a[烈焰弹预测] 已开启
+key.fireball_predict.disabled=§c[烈焰弹预测] 已关闭
+key.fireball_predict.warning_nearby=当前位于烈焰弹爆炸范围内。
+key.fireball_predict.eta_format=%.1fs

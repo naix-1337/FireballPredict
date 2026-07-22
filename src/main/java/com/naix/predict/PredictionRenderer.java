@@ -2,6 +2,7 @@ package com.naix.predict;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.util.StatCollector;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -17,10 +18,18 @@ import org.lwjgl.util.glu.GLU;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+/**
+ * 渲染火球预测可视化，包括预计撞击范围、发射轨迹和 ETA 文本。
+ * Renders fireball impact visualization, including the predicted blast area, launch trajectory, and ETA label.
+ */
 public class PredictionRenderer
 {
     private static final float ALPHA = 0.3f;
 
+    /**
+     * 监听世界渲染事件并绘制预测效果。
+     * Listen for the world render event and draw the prediction overlay.
+     */
     @SubscribeEvent
     public void onRenderWorldLast(RenderWorldLastEvent event)
     {
@@ -28,7 +37,7 @@ public class PredictionRenderer
 
         Minecraft mc = Minecraft.getMinecraft();
         World world = mc.theWorld;
-        if (world == null) return;
+        if (world == null || mc.thePlayer == null) return;
 
         BlockPos hit = FireballPredict.currentHitPos;
         int color = FireballPredict.currentColor;
@@ -217,7 +226,7 @@ public class PredictionRenderer
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(770, 771);
 
-            String text = String.format("%.1fs", FireballPredict.currentETA);
+            String text = String.format(StatCollector.translateToLocal("key.fireball_predict.eta_format"), FireballPredict.currentETA);
             int halfW = mc.fontRendererObj.getStringWidth(text) / 2;
             int textY = (int) (etaScreenY - 5);
             float scale = 2.5f;
