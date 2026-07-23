@@ -36,7 +36,7 @@ import java.util.List;
 public class FireballPredict
 {
     public static final String MODID = "fireball_predict";
-    public static final String VERSION = "2.2";
+    public static final String VERSION = "2.3";
 
     // 开关状态，客户端渲染器与预测逻辑读取这些公有状态。
     // The renderer and prediction logic read these public fields.
