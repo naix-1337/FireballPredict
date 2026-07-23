@@ -1,6 +1,0 @@
-key.categories.fireball_predict=Fireball Predict
-key.fireball_predict.toggle=Toggle Fireball Prediction
-key.fireball_predict.enabled=§a[Fireball Predict] Enabled
-key.fireball_predict.disabled=§c[Fireball Predict] Disabled
-key.fireball_predict.warning_nearby=You are within fireball blast radius.
-key.fireball_predict.eta_format=%.1fs

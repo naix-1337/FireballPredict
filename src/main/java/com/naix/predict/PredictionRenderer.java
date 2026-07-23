@@ -2,7 +2,6 @@ package com.naix.predict;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.util.StatCollector;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -226,7 +225,7 @@ public class PredictionRenderer
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(770, 771);
 
-            String text = String.format(StatCollector.translateToLocal("key.fireball_predict.eta_format"), FireballPredict.currentETA);
+            String text = String.format("%.1fs", FireballPredict.currentETA);
             int halfW = mc.fontRendererObj.getStringWidth(text) / 2;
             int textY = (int) (etaScreenY - 5);
             float scale = 2.5f;
